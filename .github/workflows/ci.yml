@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: docker.io/rockylinux:9
+    container: registry.fedoraproject.org/fedora:rawhide
 
     steps:
       - name: Install deps
@@ -22,7 +22,7 @@ jobs:
         uses: Lyude/setup-dnf@main
         with:
           update: true
-          install: "git cmake gcc openssl-devel @'development tools' nodejs"
+          install: "git cmake gcc openssl-devel @'development tools' nodejs gcc-aarch64-linux-gnu glibc-devel"
           docs: false
           weak-deps: true
           restore-cache: true
@@ -30,16 +30,41 @@ jobs:
           metadata-expire: 24
 
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Create Build Environment
-        run: mkdir -p ${{github.workspace}}/build
+        run: mkdir -p build-x86_64/ build-aarch64/
 
-      - name: Configure CMake
-        run: cmake -S ${{github.workspace}} -B ${{github.workspace}}/build
 
-      - name: Build
-        run: cmake --build ${{github.workspace}}/build --config Release
+      - name: Configure CMake (x86_64)
+        run: cmake -B build-x86_64/
+
+      - name: Build (x86_64)
+        run: cmake --build build-x86_64/ --config Release
+
+      - name: Reconfigure CMake (aarch64)
+        run: |
+          cmake -B build-aarch64/ -DCMAKE_TOOLCHAIN_FILE=cmake/aarch64-toolchain.cmake
+
+      - name: Build (aarch64)
+        run: cmake --build build-aarch64/ --config Release
+
+      - name: Tar Artifacts
+        run: |
+          tar -cvf lexiserver-x86_64.tar.gz -C build-x86_64/ lexiserver
+          tar -cvf lexiserver-aarch64.tar.gz -C build-aarch64/ lexiserver
+
+      - name: Upload Build Artifacts (x86_64)
+        uses: actions/upload-artifact@v3
+        with:
+          name: lexiserver-x86_64.tar.gz
+          path: lexiserver-x86_64.tar.gz
+
+      - name: Upload Build Artifacts (aarch64)
+        uses: actions/upload-artifact@v3
+        with:
+          name: lexiserver-aarch64.tar.gz
+          path: lexiserver-aarch64.tar.gz
 
       # - name: Test (optional)
       #   run: cmake --build ${{github.workspace}}/build --config Release --target test
