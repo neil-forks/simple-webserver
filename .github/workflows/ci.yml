@@ -1,0 +1,45 @@
+---
+name: CMake CI/CD Workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: docker.io/rockylinux:9
+
+    steps:
+      - name: Install deps
+        run: dnf -y install nodejs
+
+      - name: Setup DNF
+        uses: Lyude/setup-dnf@main
+        with:
+          update: true
+          install: "git cmake gcc openssl-devel @'development tools' nodejs"
+          docs: false
+          weak-deps: true
+          restore-cache: true
+          save-cache: true
+          metadata-expire: 24
+
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Create Build Environment
+        run: mkdir -p ${{github.workspace}}/build
+
+      - name: Configure CMake
+        run: cmake -S ${{github.workspace}} -B ${{github.workspace}}/build
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release
+
+      # - name: Test (optional)
+      #   run: cmake --build ${{github.workspace}}/build --config Release --target test
