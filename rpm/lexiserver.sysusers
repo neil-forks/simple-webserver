@@ -1,0 +1,3 @@
+g lexiserver 96
+u lexiserver 96 "LexiServer" /opt/lexiserver /sbin/nologin
+

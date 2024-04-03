@@ -1,0 +1,17 @@
+[Unit]
+Description=Lexiserver
+After=network.target
+
+[Service]
+Type=forking
+Description=A webserver written in C that tries to keep it simple
+Documentation=man:lexiserver(1) man:lexiserver.conf(5)
+EnvironmentFile=-/etc/sysconfig/httpd
+ExecStart=/usr/bin/lexiserver
+Group=lexiserver
+Restart=on-abnormal
+User=lexiserver
+WorkingDirectory=/opt/lexiserver
+
+[Install]
+WantedBy=multi-user.target

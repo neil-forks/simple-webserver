@@ -1,0 +1,108 @@
+%global with_debug 1
+
+%if 0%{?with_debug}
+%global _find_debuginfo_dwz_opts %{nil}
+%global _dwz_low_mem_die_limit 0
+%else
+%global debug_package %{nil}
+%endif
+
+%global gittag v%{version}
+
+Name: lexiserver
+Version: @LEXISERVER_VERSION@
+Release: 1%{dist}
+Summary: A webserver written in C that tries to keep it simple
+
+License: GPL-3.0-only
+
+URL:     https://github.com/alexiarstein/simple-webserver
+Source:  https://github.com/alexiarstein/simple-webserver/archive/%{gittag}/%{name}-%{version}.tar.gz
+
+BuildRequires: annobin-plugin-gcc
+BuildRequires: cmake
+BuildRequires: gcc
+BuildRequires: file
+BuildRequires: openssl-devel
+BuildRequires: systemd-rpm-macros
+
+%description
+LexiServer is a webserver written in C that tries to keep it simple. It supports TLS and executing CGI scripts.
+
+%pre
+%sysusers_create_compat lexiserver.sysusers
+	
+%post
+%systemd_post lexiserver.service
+ 
+%preun
+%systemd_preun lexiserver.service
+ 
+%postun
+%systemd_postun lexiserver.service
+ 
+%package devel
+Summary: Development files for lexiserver
+BuildArch: noarch
+
+%description devel
+The development files for compiling against lexiserver
+
+%package doc
+Summary: Documentation files for lexiserver
+BuildArch: noarch
+
+%description doc
+The documentation files for using lexiserver
+
+%prep 
+%autosetup -n simple-webserver-%{version}
+
+#remove precompiled binaries
+rm lexiserver{,-arm64}
+
+%build
+%cmake
+%cmake_build
+
+%install
+%cmake_install
+
+for f in 404.html lexiserver.conf; do
+  install -p -D -m 0644 $f %{buildroot}/opt/lexiserver/$f
+done
+
+pushd rpm
+install -p -D -m 0644 lexiserver.service %{buildroot}%{_unitdir}/lexiserver.service
+install -p -D -m 0644 lexiserver.sysusers %{buildroot}%{_sysusersdir}/lexiserver.conf
+popd
+
+pushd src
+install -p -D -m 0644 lexiserver.c %{buildroot}/%{_includedir}/lexiserver.c
+install -p -D -m 0644 lexiserver.1 %{buildroot}/%{_mandir}/man1/lexiserver.1
+install -p -D -m 0644 lexiserver.conf.5 %{buildroot}/%{_mandir}/man5/lexiserver.conf.5
+popd
+
+%check
+%ctest
+
+%files
+%license LICENSE
+%dir /opt/lexiserver
+/opt/lexiserver/404.html
+%config(noreplace) /opt/lexiserver/lexiserver.conf
+%{_bindir}/lexiserver
+%{_sysusersdir}/lexiserver.conf
+%{_unitdir}/lexiserver.service
+
+%files devel
+%{_includedir}/lexiserver*.c
+
+%files doc
+%doc README.md RASPBERRY.md
+%{_mandir}/man1/lexiserver.1*
+%{_mandir}/man5/lexiserver.conf.5*
+
+%changelog
+* Thu Mar 28 2024 Neil Hanlon <neil@shrug.pw> - 1.1.0-1
+- initial package

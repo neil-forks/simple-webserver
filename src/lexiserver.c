@@ -20,7 +20,10 @@
 #define DEFAULT_LPORT 1337
 #define DEFAULT_WEB_ROOT "/tmp/www"
 #define DEFAULT_LBUFSIZE 1024
-#define DEFAULT_LEXISERVER "lexiserver-1.0.2" // No tiene un uso concreto ahora. Es mas un boilerplate que otra cosa en este momento.
+
+#ifndef DEFAULT_LEXISERVER
+#define DEFAULT_LEXISERVER "lexiserver-0.0.0" // No tiene un uso concreto ahora. Es mas un boilerplate que otra cosa en este momento.
+#endif
 
 // DEFINE LBUFSIZE COMO UNA CONSTANTE GLOBAL
 const int LBUFSIZE = BUFFER_SIZE;
